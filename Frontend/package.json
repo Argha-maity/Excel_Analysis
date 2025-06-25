@@ -1,0 +1,8 @@
+{
+  "dependencies": {
+    "chart.js": "^4.5.0",
+    "chartjs-plugin-datalabels": "^2.2.0",
+    "libs": "^0.1.2",
+    "xlsx": "^0.18.5"
+  }
+}

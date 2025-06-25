@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sign Up Page</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link rel="stylesheet" href="signup.css">
+</head>
+
+<body class="protected-page">
+    <div class="signup-wrapper">
+        <form id="signup_form">
+            <h1>Create Account</h1>
+            <div class="input_box">
+                <input type="text" name="username" placeholder="Username" required />
+            </div>
+            <div class="input_box">
+                <input type="email" name="email" placeholder="Email Address" required />
+            </div>
+            <div class="input_box">
+                <input type="password" name="password" placeholder="Create Password" required />
+            </div>
+            <div class="terms-agree">
+                <label><input type="checkbox" required /> I agree to the <a href="#">Terms & Conditions</a></label>
+            </div>
+            <button type="submit" class="btn">Sign Up</button>
+            <div class="login-link">
+                <p>Already have an account? <a href="login.html">Login</a></p>
+            </div>
+        </form>
+    </div>
+    <script src="auth.js"></script>
+    <script src="signup.js"></script>
+</body>
+
+</html>
