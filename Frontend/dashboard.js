@@ -108,6 +108,11 @@ async function handleFileUpload(e) {
 
 
 function setupDataUI(fileData) {
+    if (!fileData || typeof fileData !== 'object') {
+        showUploadStatus("Invalid file data", "error");
+        return;
+    }
+
     // Show all sections
     document.getElementById('chartSection').style.display = 'block';
     document.getElementById('dataTableSection').style.display = 'block';
@@ -413,11 +418,12 @@ async function loadFile(fileId) {
         
         if (!response.ok) throw new Error('Failed to load file data');
         
-        const fileData = await response.json();
-        currentFileData = fileData;
-        currentFileId = fileId;
+        const result = await response.json();
+        currentFileData = result.data;
+        currentFileId = result.fileId;
+
         
-        setupDataUI(fileData);
+        setupDataUI(result);
         showUploadStatus(`Loaded file data successfully!`, 'success');
         
     } catch (err) {
