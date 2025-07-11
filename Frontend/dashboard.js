@@ -360,6 +360,10 @@ async function loadRecentFiles() {
 }
 
 function addToRecentFiles(filename, fileId, createdAt) {
+    if (!fileId || fileId === 'undefined') {
+        console.warn("Skipping file with invalid ID:", fileId);
+        return;
+    }
     const recentFiles = document.querySelector('.recent-files');
     const fileItem = document.createElement('div');
     fileItem.className = 'file-item';

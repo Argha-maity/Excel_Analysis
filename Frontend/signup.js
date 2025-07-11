@@ -22,7 +22,7 @@ document.getElementById("signup_form").addEventListener("submit", async (e) => {
         if (response.ok) {
             localStorage.setItem("token", data.token); 
             localStorage.setItem("userEmail", data.email);
-            window.location.href = "index.html?freshSignup=true";
+            window.location.href = "dashboard.html";
         } else {
             throw new Error(data.error || "Registration failed");
         }
