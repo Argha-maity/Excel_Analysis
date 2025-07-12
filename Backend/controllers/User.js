@@ -84,8 +84,29 @@ async function getCurrentUser(req, res) {
     }
 }
 
+async function updateProfile(req, res) {
+  try {
+    const userId = req.user.id;
+    const { username, email } = req.body;
+
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { username, email },
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedUser) return res.status(404).json({ message: 'User not found' });
+
+    res.json({ message: 'Profile updated successfully', user: updatedUser });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+}
+
 module.exports = {
     handleUserSignup,
     handleUserLogin,
     getCurrentUser,
+    updateProfile,
 };

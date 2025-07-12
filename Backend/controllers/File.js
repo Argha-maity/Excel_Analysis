@@ -11,7 +11,7 @@ async function handleFileUpload(req, res) {
 
     const filePath = req.file.path;
     /*const filePath = path.join(__dirname, '..', 'uploads', req.file.filename);*/
-    const buffer = fs.readFileSync(filePath); 
+    const buffer = fs.readFileSync(filePath);
     const workbook = XLSX.read(buffer, { type: "buffer" });
 
     const processedData = {};
@@ -30,7 +30,7 @@ async function handleFileUpload(req, res) {
     });
 
     const file = new File({
-      filename: req.file.filename,       
+      filename: req.file.filename,
       originalname: req.file.originalname,
       userId: req.user.id,
       processedData,
@@ -139,7 +139,7 @@ async function getDashboardStats(req, res) {
     const userId = req.user.id;
 
     const totalFiles = await File.countDocuments({ userId });
-    const totalCharts = totalFiles * 5; 
+    const totalCharts = totalFiles * 5;
     const chartImports = totalFiles * 2; // placeholder
 
     const filesProcessedChange = "+5 from last month"; // Replace with real logic
@@ -180,7 +180,7 @@ async function downloadFile(req, res) {
       return res.status(404).json({ message: 'File not found on server' });
     }
 
-    res.download(filePath, file.originalname || file.filename); 
+    res.download(filePath, file.originalname || file.filename);
   } catch (err) {
     console.error('Error downloading file:', err);
     res.status(500).json({ message: 'Download failed' });

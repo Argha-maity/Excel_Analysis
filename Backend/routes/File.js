@@ -9,7 +9,8 @@ const {
     getAllFiles, 
     deleteFile,
     getDashboardStats,
-    downloadFile,} = require("../controllers/File");
+    downloadFile,
+  } = require("../controllers/File");
 const { protect } = require("../middleware/auth");
 
 const router = express.Router();
@@ -60,7 +61,6 @@ router.post(
   },
   handleFileUpload
 );
-
 router.get("/files", protect, getAllFiles);
 router.get('/files/dashboard/stats', protect, getDashboardStats);
 router.get('/files/:id/download', protect, downloadFile);
