@@ -9,7 +9,9 @@ async function handleFileUpload(req, res) {
       return res.status(400).json({ message: "No file uploaded" });
     }
 
-    const buffer = req.file.buffer;
+    const filePath = req.file.path;
+    /*const filePath = path.join(__dirname, '..', 'uploads', req.file.filename);*/
+    const buffer = fs.readFileSync(filePath); 
     const workbook = XLSX.read(buffer, { type: "buffer" });
 
     const processedData = {};
@@ -28,7 +30,7 @@ async function handleFileUpload(req, res) {
     });
 
     const file = new File({
-      filename: req.file.originalname,       
+      filename: req.file.filename,       
       originalname: req.file.originalname,
       userId: req.user.id,
       processedData,
