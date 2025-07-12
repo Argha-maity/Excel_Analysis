@@ -15,27 +15,12 @@
             <div class="logo">ExcelInsight</div>
             <ul class="nav-menu">
                 <li class="nav-item">
-                    <a href="dashboard.html" class="nav-link active">
+                    <a href="#" class="nav-link active" data-section="dashboardSection">
                         <i class="fas fa-chart-pie"></i> Dashboard
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a href="#" class="nav-link">
-                        <i class="fas fa-file-upload"></i> Upload Files
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a href="#" class="nav-link">
-                        <i class="fas fa-chart-bar"></i> Visualizations
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a href="#" class="nav-link">
-                        <i class="fas fa-history"></i> Data History
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a href="#" class="nav-link">
+                    <a href="#" class="nav-link" data-section="settingsSection">
                         <i class="fas fa-cog"></i> Settings
                     </a>
                 </li>
@@ -43,7 +28,6 @@
         </aside>
 
         <main class="main-content">
-
             <div class="header">
                 <h1 class="page-title">Dashboard</h1>
                 <div class="user-profile">
@@ -53,135 +37,157 @@
                 </div>
             </div>
 
-            <div class="dashboard-cards">
-                <div class="card">
-                    <h3 class="card-title">Files Processed</h3>
-                    <div class="card-content">
-                        <h2 id="filesProcessed">0</h2>
-                        <p id="filesProcessedChange"></p>
+            <!-- Dashboard Section -->
+            <div id="dashboardSection">
+                <div class="dashboard-cards">
+                    <div class="card">
+                        <h3 class="card-title">Files Processed</h3>
+                        <div class="card-content">
+                            <h2 id="filesProcessed">0</h2>
+                            <p id="filesProcessedChange"></p>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <h3 class="card-title">Charts Created</h3>
+                        <div class="card-content">
+                            <h2 id="chartsCreated">0</h2>
+                            <p id="chartsCreatedChange"></p>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <h3 class="card-title">Chart Import</h3>
+                        <div class="card-content">
+                            <h2 id="chartImports">0</h2>
+                            <p id="chartImportsChange"></p>
+                        </div>
                     </div>
                 </div>
-                <div class="card">
-                    <h3 class="card-title">Charts Created</h3>
-                    <div class="card-content">
-                        <h2 id="chartsCreated">0</h2>
-                        <p id="chartsCreatedChange"></p>
+
+                <div class="upload-section">
+                    <p class="upload-description">
+                        Upload any Excel file and instantly generate beautiful, interactive charts and analytics.
+                    </p>
+                    <div class="upload-wrapper">
+                        <label for="file-upload" class="upload-btn">
+                            <i class="fas fa-upload"></i> Upload Excel File
+                        </label>
+                        <input id="file-upload" type="file" accept=".xlsx,.xls,.csv" style="display: none;" />
+                    </div>
+                    <p style="margin-top: 15px; font-size: 12px; color: #777;">
+                        Supports .xls, .xlsx formats
+                    </p>
+                    <div id="file-info" style="margin-top: 15px;"></div>
+                </div>
+
+                <div class="data-controls" id="dataControls" style="display: none;">
+                    <div class="control-group">
+                        <label for="sheetSelect">Sheet:</label>
+                        <select id="sheetSelect" class="chart-select"></select>
+                    </div>
+                    <div class="control-group">
+                        <label for="xAxisSelect">X-Axis:</label>
+                        <select id="xAxisSelect" class="chart-select"></select>
+                    </div>
+                    <div class="control-group">
+                        <label for="yAxisSelect">Y-Axis:</label>
+                        <select id="yAxisSelect" class="chart-select"></select>
                     </div>
                 </div>
-                <div class="card">
-                    <h3 class="card-title">Chart Import</h3>
-                    <div class="card-content">
-                        <h2 id="chartImports">0</h2>
-                        <p id="chartImportsChange"></p>
+
+                <div class="chart-section" id="chartSection" style="display: none;">
+                    <h2 class="section-title">Data Visualization</h2>
+                    <div class="chart-container">
+                        <canvas id="mainChart"></canvas>
+                    </div>
+                    <div class="chart-options">
+                        <select id="chartType" class="chart-select">
+                            <option value="bar">Bar Chart</option>
+                            <option value="line">Line Chart</option>
+                            <option value="pie">Pie Chart</option>
+                            <option value="radar">Radar Chart</option>
+                            <option value="polarArea">Polar Area Chart</option>
+                        </select>
+                        <button id="exportChart" class="btn-outline">
+                            <i class="fas fa-download"></i> Export Chart
+                        </button>
+                        <button id="exportData" class="btn-outline">
+                            <i class="fas fa-file-export"></i> Export Data
+                        </button>
+                    </div>
+                </div>
+
+                <div class="data-table-section" id="dataTableSection" style="display: none;">
+                    <h2 class="section-title">Data Preview</h2>
+                    <div class="table-responsive">
+                        <table id="excelDataTable" class="data-table"></table>
+                    </div>
+                </div>
+
+                <!-- Recent Files -->
+                <div class="recent-files">
+                    <h2 class="section-title">Recent Files</h2>
+                    <div class="file-item">
+                        <div class="file-icon">
+                            <i class="fas fa-file-excel"></i>
+                        </div>
+                        <div class="file-info">
+                            <div class="file-name">Sales_Report_Q2_2025.xlsx</div>
+                            <div class="file-date">Uploaded: June 10, 2025</div>
+                        </div>
+                        <div class="file-actions">
+                            <button class="action-btn" title="Visualize" data-file-id="YOUR_FILE_ID_HERE">
+                                <i class="fas fa-chart-bar"></i>
+                            </button>
+                            <button class="action-btn" title="Download" data-file-id="YOUR_FILE_ID_HERE">
+                                <i class="fas fa-download"></i>
+                            </button>
+                            <button class="action-btn" title="Delete" data-file-id="YOUR_FILE_ID_HERE">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="file-item">
+                        <div class="file-icon">
+                            <i class="fas fa-file-excel"></i>
+                        </div>
+                        <div class="file-info">
+                            <div class="file-name">Customer_Data_Analysis.xlsx</div>
+                            <div class="file-date">Uploaded: June 8, 2025</div>
+                        </div>
+                        <div class="file-actions">
+                            <button class="action-btn" title="Visualize">
+                                <i class="fas fa-chart-bar"></i>
+                            </button>
+                            <button class="action-btn" title="Download">
+                                <i class="fas fa-download"></i>
+                            </button>
+                            <button class="action-btn" title="Delete">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <div class="upload-section">
-                <p class="upload-description">
-                    Upload any Excel file and instantly generate beautiful, interactive charts and analytics.
-                </p>
-                <div class="upload-wrapper">
-                    <label for="file-upload" class="upload-btn">
-                        <i class="fas fa-upload"></i> Upload Excel File
-                    </label>
-                    <input id="file-upload" type="file" accept=".xlsx,.xls,.csv" style="display: none;"/>
-                </div>
-                <p style="margin-top: 15px; font-size: 12px; color: #777;">
-                    Supports .xls, .xlsx formats
-                </p>
-                <div id="file-info" style="margin-top: 15px;"></div>
-            </div>
-
-
-            <div class="data-controls" id="dataControls" style="display: none;">
-                <div class="control-group">
-                    <label for="sheetSelect">Sheet:</label>
-                    <select id="sheetSelect" class="chart-select"></select>
-                </div>
-                <div class="control-group">
-                    <label for="xAxisSelect">X-Axis:</label>
-                    <select id="xAxisSelect" class="chart-select"></select>
-                </div>
-                <div class="control-group">
-                    <label for="yAxisSelect">Y-Axis:</label>
-                    <select id="yAxisSelect" class="chart-select"></select>
-                </div>
-            </div>
-
-
-            <div class="chart-section" id="chartSection" style="display: none;">
-                <h2 class="section-title">Data Visualization</h2>
-                <div class="chart-container">
-                    <canvas id="mainChart"></canvas>
-                </div>
-                <div class="chart-options">
-                    <select id="chartType" class="chart-select">
-                        <option value="bar">Bar Chart</option>
-                        <option value="line">Line Chart</option>
-                        <option value="pie">Pie Chart</option>
-                        <option value="radar">Radar Chart</option>
-                        <option value="polarArea">Polar Area Chart</option>
-                    </select>
-                    <button id="exportChart" class="btn-outline">
-                        <i class="fas fa-download"></i> Export Chart
-                    </button>
-                    <button id="exportData" class="btn-outline">
-                        <i class="fas fa-file-export"></i> Export Data
-                    </button>
-                </div>
-            </div>
-
-
-            <div class="data-table-section" id="dataTableSection" style="display: none;">
-                <h2 class="section-title">Data Preview</h2>
-                <div class="table-responsive">
-                    <table id="excelDataTable" class="data-table"></table>
-                </div>
-            </div>
-
-            <!-- Recent Files -->
-            <div class="recent-files">
-                <h2 class="section-title">Recent Files</h2>
-                <div class="file-item">
-                    <div class="file-icon">
-                        <i class="fas fa-file-excel"></i>
-                    </div>
-                    <div class="file-info">
-                        <div class="file-name">Sales_Report_Q2_2025.xlsx</div>
-                        <div class="file-date">Uploaded: June 10, 2025</div>
-                    </div>
-                    <div class="file-actions">
-                        <button class="action-btn" title="Visualize" data-file-id="YOUR_FILE_ID_HERE">
-                            <i class="fas fa-chart-bar"></i>
-                        </button>
-                        <button class="action-btn" title="Download" data-file-id="YOUR_FILE_ID_HERE">
-                            <i class="fas fa-download"></i>
-                        </button>
-                        <button class="action-btn" title="Delete" data-file-id="YOUR_FILE_ID_HERE">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
-                </div>
-                <div class="file-item">
-                    <div class="file-icon">
-                        <i class="fas fa-file-excel"></i>
-                    </div>
-                    <div class="file-info">
-                        <div class="file-name">Customer_Data_Analysis.xlsx</div>
-                        <div class="file-date">Uploaded: June 8, 2025</div>
-                    </div>
-                    <div class="file-actions">
-                        <button class="action-btn" title="Visualize">
-                            <i class="fas fa-chart-bar"></i>
-                        </button>
-                        <button class="action-btn" title="Download">
-                            <i class="fas fa-download"></i>
-                        </button>
-                        <button class="action-btn" title="Delete">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
+            <!-- Settings Section (Initially hidden) -->
+            <div id="settingsSection" style="display: none;">
+                <div class="settings-panel">
+                    <h2 class="section-title">Profile Update</h2>
+                    <form id="profileForm" class="settings-form">
+                        <div class="form-group">
+                            <label for="usernameInput"><i class="fas fa-user"></i> Username</label>
+                            <input type="text" id="usernameInput" name="username" placeholder="Enter your username"
+                                required />
+                        </div>
+                        <div class="form-group">
+                            <label for="emailInput"><i class="fas fa-envelope"></i> Email</label>
+                            <input type="email" id="emailInput" name="email" placeholder="Enter your email" required />
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="btn-primary"><i class="fas fa-save"></i> Save Changes</button>
+                            <div id="profileUpdateStatus" class="form-status"></div>
+                        </div>
+                    </form>
                 </div>
             </div>
         </main>

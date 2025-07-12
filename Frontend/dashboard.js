@@ -19,6 +19,8 @@ document.addEventListener('DOMContentLoaded', () => {
     loadDashboardStats();
     loadRecentFiles();
     setupEventListeners();
+    setupSidebarNavigation();
+    setupProfileForm();
 });
 
 let currentChart = null;
@@ -548,4 +550,82 @@ async function loadDashboardStats() {
     } catch {
         console.error("Error loading dashboard stats:", err);
     }
+}
+
+function setupSidebarNavigation() {
+    const navLinks = document.querySelectorAll('.nav-link');
+
+    navLinks.forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+
+            // Remove active from all
+            navLinks.forEach(l => l.classList.remove('active'));
+            link.classList.add('active');
+
+            const targetId = link.getAttribute('data-section');
+            toggleSection(targetId);
+        });
+    });
+}
+
+function toggleSection(showId) {
+    const sectionIds = ['dashboardSection', 'settingsSection'];
+
+    sectionIds.forEach(id => {
+        const section = document.getElementById(id);
+        if (section) section.style.display = (id === showId ? 'block' : 'none');
+    });
+}
+
+function setupProfileForm() {
+    const profileForm = document.getElementById("profileForm");
+    const usernameInput = document.getElementById("usernameInput");
+    const emailInput = document.getElementById("emailInput");
+    const statusDiv = document.getElementById("profileUpdateStatus");
+
+    // Prefill with current user data
+    fetch("http://localhost:8003/api/users/me", {
+        headers: {
+            "Authorization": `Bearer ${getToken()}`
+        }
+    })
+    .then(res => res.json())
+    .then(user => {
+        usernameInput.value = user.username || "";
+        emailInput.value = user.email || "";
+    });
+
+    profileForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const updatedData = {
+            username: usernameInput.value.trim(),
+            email: emailInput.value.trim(),
+        };
+
+        try {
+            const res = await fetch("http://localhost:8003/api/users/me", {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${getToken()}`
+                },
+                body: JSON.stringify(updatedData)
+            });
+
+            if (!res.ok) throw new Error("Update failed");
+
+            statusDiv.textContent = "Profile updated successfully!";
+            statusDiv.style.color = "green";
+
+            // Update name/avatar in header
+            document.getElementById("user-name").textContent = updatedData.username;
+            document.querySelector(".user-avatar").textContent = updatedData.username
+                .split(" ").map(w => w[0].toUpperCase()).join("");
+        } catch (err) {
+            statusDiv.textContent = "Error updating profile.";
+            statusDiv.style.color = "red";
+        }
+    });
 }
