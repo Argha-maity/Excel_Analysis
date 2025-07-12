@@ -41,9 +41,9 @@
                 </li>
             </ul>
         </aside>
-        
+
         <main class="main-content">
-            
+
             <div class="header">
                 <h1 class="page-title">Dashboard</h1>
                 <div class="user-profile">
@@ -76,22 +76,24 @@
                     </div>
                 </div>
             </div>
-            
+
             <div class="upload-section">
                 <p class="upload-description">
                     Upload any Excel file and instantly generate beautiful, interactive charts and analytics.
                 </p>
-                <label for="file-upload" class="upload-btn">
-                    <i class="fas fa-upload"></i> Upload Excel File
-                </label>
-                <input id="file-upload" type="file" accept=".xlsx,.xls" style="display: none;" />
+                <div class="upload-wrapper">
+                    <label for="file-upload" class="upload-btn">
+                        <i class="fas fa-upload"></i> Upload Excel File
+                    </label>
+                    <input id="file-upload" type="file" accept=".xlsx,.xls,.csv" style="display: none;"/>
+                </div>
                 <p style="margin-top: 15px; font-size: 12px; color: #777;">
                     Supports .xls, .xlsx formats
                 </p>
                 <div id="file-info" style="margin-top: 15px;"></div>
             </div>
 
-            
+
             <div class="data-controls" id="dataControls" style="display: none;">
                 <div class="control-group">
                     <label for="sheetSelect">Sheet:</label>
@@ -107,7 +109,7 @@
                 </div>
             </div>
 
-            
+
             <div class="chart-section" id="chartSection" style="display: none;">
                 <h2 class="section-title">Data Visualization</h2>
                 <div class="chart-container">
@@ -130,7 +132,7 @@
                 </div>
             </div>
 
-            
+
             <div class="data-table-section" id="dataTableSection" style="display: none;">
                 <h2 class="section-title">Data Preview</h2>
                 <div class="table-responsive">
