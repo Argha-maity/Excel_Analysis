@@ -54,7 +54,7 @@ async function getAllFiles(req, res) {
     const files = await File.find({ userId: req.user.id }).sort({ createdAt: -1 });
 
     const formatted = files.map(file => ({
-      fileId: file._id,
+      _id: file._id,
       filename: file.filename,
       createdAt: file.createdAt
     }));
