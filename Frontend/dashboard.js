@@ -21,6 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setupEventListeners();
     setupSidebarNavigation();
     setupProfileForm();
+    setupAdminPanel();
 });
 
 let currentChart = null;
@@ -571,11 +572,34 @@ function setupSidebarNavigation() {
 
 function toggleSection(showId) {
     const sectionIds = ['dashboardSection', 'settingsSection'];
+    const pageTitle = document.querySelector('.page-title');
 
     sectionIds.forEach(id => {
         const section = document.getElementById(id);
         if (section) section.style.display = (id === showId ? 'block' : 'none');
     });
+
+    // When showing settings, activate profile tab by default
+    if (showId === 'settingsSection') {
+        activateTab('profileTab');
+    }
+
+    // Update page title
+    pageTitle.textContent = showId === 'dashboardSection' ? 'Dashboard' : 'Settings';
+}
+
+function activateTab(tabId) {
+    // Deactivate all tabs
+    document.querySelectorAll('.settings-tab').forEach(tab => {
+        tab.classList.remove('active');
+    });
+    document.querySelectorAll('.settings-tab-content').forEach(content => {
+        content.classList.remove('active');
+    });
+
+    // Activate the selected tab
+    document.querySelector(`.settings-tab[data-tab="${tabId}"]`).classList.add('active');
+    document.getElementById(tabId).classList.add('active');
 }
 
 function setupProfileForm() {
@@ -583,6 +607,11 @@ function setupProfileForm() {
     const usernameInput = document.getElementById("usernameInput");
     const emailInput = document.getElementById("emailInput");
     const statusDiv = document.getElementById("profileUpdateStatus");
+
+    if (!profileForm || !usernameInput || !emailInput) {
+        console.error("Profile form elements not found!");
+        return;
+    }
 
     // Prefill with current user data
     fetch("http://localhost:8003/api/users/me", {
@@ -628,4 +657,181 @@ function setupProfileForm() {
             statusDiv.style.color = "red";
         }
     });
+}
+
+function setupAdminPanel() {
+    // Tab switching
+    const tabs = document.querySelectorAll('.settings-tab');
+    tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            tabs.forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            
+            const tabId = tab.getAttribute('data-tab');
+            document.querySelectorAll('.settings-tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(tabId).classList.add('active');
+        });
+    });
+
+    // Load users when admin tab is clicked
+    document.querySelector('.settings-tab[data-tab="adminTab"]').addEventListener('click', loadUsers);
+
+    // User search functionality
+    document.getElementById('userSearch').addEventListener('input', (e) => {
+        filterUsers(e.target.value);
+    });
+
+    // Refresh users button
+    document.getElementById('refreshUsers').addEventListener('click', loadUsers);
+
+    // System settings form
+    document.getElementById('systemSettingsForm').addEventListener('submit', (e) => {
+        e.preventDefault();
+        saveSystemSettings();
+    });
+
+    // Load current system settings
+    loadSystemSettings();
+}
+
+async function loadUsers() {
+    try {
+        const response = await fetch('http://localhost:8003/api/admin/users', {
+            headers: { 'Authorization': `Bearer ${getToken()}` }
+        });
+
+        if (!response.ok) throw new Error('Failed to load users');
+
+        const users = await response.json();
+        renderUsersTable(users);
+    } catch (error) {
+        console.error('Error loading users:', error);
+        showAdminNotification('Failed to load users', 'error');
+    }
+}
+
+function renderUsersTable(users) {
+    const tbody = document.querySelector('#usersTable tbody');
+    tbody.innerHTML = '';
+
+    users.forEach(user => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${user.username}</td>
+            <td>${user.email}</td>
+            <td>${user.role}</td>
+            <td class="action-buttons">
+                <button class="action-btn edit-user" data-user-id="${user._id}" title="Edit">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <button class="action-btn delete delete-user" data-user-id="${user._id}" title="Delete">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+
+    // Add event listeners to action buttons
+    document.querySelectorAll('.edit-user').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const userId = e.currentTarget.getAttribute('data-user-id');
+            editUser(userId);
+        });
+    });
+
+    document.querySelectorAll('.delete-user').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const userId = e.currentTarget.getAttribute('data-user-id');
+            deleteUser(userId);
+        });
+    });
+}
+
+function filterUsers(searchTerm) {
+    const rows = document.querySelectorAll('#usersTable tbody tr');
+    rows.forEach(row => {
+        const username = row.cells[0].textContent.toLowerCase();
+        const email = row.cells[1].textContent.toLowerCase();
+        const search = searchTerm.toLowerCase();
+        
+        if (username.includes(search) || email.includes(search)) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
+
+async function editUser(userId) {
+    // Implement edit user functionality
+    // Could show a modal with the user's details for editing
+    console.log('Edit user:', userId);
+}
+
+async function deleteUser(userId) {
+    if (!confirm('Are you sure you want to delete this user?')) return;
+    
+    try {
+        const response = await fetch(`http://localhost:8003/api/admin/users/${userId}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${getToken()}` }
+        });
+
+        if (!response.ok) throw new Error('Failed to delete user');
+
+        showAdminNotification('User deleted successfully', 'success');
+        loadUsers(); // Refresh the user list
+    } catch (error) {
+        console.error('Error deleting user:', error);
+        showAdminNotification('Failed to delete user', 'error');
+    }
+}
+
+async function loadSystemSettings() {
+    try {
+        const response = await fetch('http://localhost:8003/api/admin/settings', {
+            headers: { 'Authorization': `Bearer ${getToken()}` }
+        });
+
+        if (!response.ok) throw new Error('Failed to load settings');
+
+        const settings = await response.json();
+        document.getElementById('maxFileSize').value = settings.maxFileSize || '';
+        document.getElementById('allowedFileTypes').value = settings.allowedFileTypes || '';
+    } catch (error) {
+        console.error('Error loading system settings:', error);
+    }
+}
+
+async function saveSystemSettings() {
+    const settings = {
+        maxFileSize: document.getElementById('maxFileSize').value,
+        allowedFileTypes: document.getElementById('allowedFileTypes').value
+    };
+
+    try {
+        const response = await fetch('http://localhost:8003/api/admin/settings', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${getToken()}`
+            },
+            body: JSON.stringify(settings)
+        });
+
+        if (!response.ok) throw new Error('Failed to save settings');
+
+        showAdminNotification('Settings saved successfully', 'success');
+    } catch (error) {
+        console.error('Error saving system settings:', error);
+        showAdminNotification('Failed to save settings', 'error');
+    }
+}
+
+function showAdminNotification(message, type = 'info') {
+    // Implement notification display (could use a toast or alert)
+    alert(`${type.toUpperCase()}: ${message}`);
 }

@@ -169,25 +169,89 @@
                 </div>
             </div>
 
-            <!-- Settings Section (Initially hidden) -->
+            <!-- Settings Section -->
             <div id="settingsSection" style="display: none;">
-                <div class="settings-panel">
-                    <h2 class="section-title">Profile Update</h2>
-                    <form id="profileForm" class="settings-form">
-                        <div class="form-group">
-                            <label for="usernameInput"><i class="fas fa-user"></i> Username</label>
-                            <input type="text" id="usernameInput" name="username" placeholder="Enter your username"
-                                required />
+                <div class="settings-tabs">
+                    <button class="settings-tab active" data-tab="profileTab">Profile</button>
+                    <button class="settings-tab" data-tab="adminTab">Admin Panel</button>
+                </div>
+
+                <!-- Profile Tab  -->
+                <div id="profileTab" class="settings-tab-content active">
+                    <div class="settings-panel">
+                        <h2 class="section-title">Profile Update</h2>
+                        <form id="profileForm" class="settings-form">
+                            <div class="form-group">
+                                <label for="usernameInput"><i class="fas fa-user"></i> Username</label>
+                                <input type="text" id="usernameInput" name="username" placeholder="Enter your username"
+                                    required />
+                            </div>
+                            <div class="form-group">
+                                <label for="emailInput"><i class="fas fa-envelope"></i> Email</label>
+                                <input type="email" id="emailInput" name="email" placeholder="Enter your email"
+                                    required />
+                            </div>
+                            <div class="form-actions">
+                                <button type="submit" class="btn-primary"><i class="fas fa-save"></i> Save
+                                    Changes</button>
+                                <div id="profileUpdateStatus" class="form-status"></div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Admin Tab-->
+                <div id="adminTab" class="settings-tab-content">
+                    <div class="settings-panel">
+                        <h2 class="section-title">Admin Panel</h2>
+
+                        <!-- User Management Section -->
+                        <div class="admin-section">
+                            <h3><i class="fas fa-users"></i> User Management</h3>
+                            <div class="admin-controls">
+                                <input type="text" id="userSearch" placeholder="Search users...">
+                                <button id="refreshUsers" class="btn-outline">
+                                    <i class="fas fa-sync-alt"></i> Refresh
+                                </button>
+                            </div>
+                            <div class="admin-table-container">
+                                <table id="usersTable" class="admin-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Username</th>
+                                            <th>Email</th>
+                                            <th>Role</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <!-- Users will be loaded here -->
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
-                        <div class="form-group">
-                            <label for="emailInput"><i class="fas fa-envelope"></i> Email</label>
-                            <input type="email" id="emailInput" name="email" placeholder="Enter your email" required />
+
+                        <!-- System Settings Section -->
+                        <div class="admin-section">
+                            <h3><i class="fas fa-cog"></i> System Settings</h3>
+                            <form id="systemSettingsForm" class="settings-form">
+                                <div class="form-group">
+                                    <label for="maxFileSize">Max File Size (MB)</label>
+                                    <input type="number" id="maxFileSize" name="maxFileSize" min="1" max="100">
+                                </div>
+                                <div class="form-group">
+                                    <label for="allowedFileTypes">Allowed File Types</label>
+                                    <input type="text" id="allowedFileTypes" name="allowedFileTypes"
+                                        placeholder=".xlsx, .xls, .csv">
+                                </div>
+                                <div class="form-actions">
+                                    <button type="submit" class="btn-primary">
+                                        <i class="fas fa-save"></i> Save System Settings
+                                    </button>
+                                </div>
+                            </form>
                         </div>
-                        <div class="form-actions">
-                            <button type="submit" class="btn-primary"><i class="fas fa-save"></i> Save Changes</button>
-                            <div id="profileUpdateStatus" class="form-status"></div>
-                        </div>
-                    </form>
+                    </div>
                 </div>
             </div>
         </main>
