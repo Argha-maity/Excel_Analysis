@@ -852,10 +852,8 @@ function filterUsers(searchTerm) {
     });
 }
 
-async function editUser(userId) {
+async function editUser (userId) {
     try {
-        console.log(`Fetching user data for ID: ${userId}`); // Debug
-
         const response = await fetch(`http://localhost:8003/api/admin/users/${userId}`, {
             headers: {
                 'Authorization': `Bearer ${getToken()}`,
@@ -863,17 +861,12 @@ async function editUser(userId) {
             }
         });
 
-        console.log('Response status:', response.status); // Debug
-
         if (!response.ok) {
-            const text = await response.text(); // don't try response.json() if status is error
-            throw new Error(`Server error: ${text}`);
+            const error = await response.json();
+            throw new Error(error.message || 'Failed to fetch user data');
         }
 
         const user = await response.json();
-        console.log('User data:', user); // Debug
-
-        // Create and show edit modal
         showEditUserModal(user);
     } catch (err) {
         console.error('Error editing user:', err);
@@ -965,14 +958,12 @@ async function deleteUser(userId) {
     if (!confirm('Are you sure you want to delete this user?')) return;
 
     try {
-        // 1. Get current token
         const token = getToken();
         if (!token) {
             showAdminNotification('Not authenticated', 'error');
             return logout();
         }
 
-        // 2. Make delete request
         const response = await fetch(`http://localhost:8003/api/admin/users/${userId}`, {
             method: 'DELETE',
             headers: {
@@ -981,33 +972,17 @@ async function deleteUser(userId) {
             }
         });
 
-        // 3. Handle response
-        const contentType = response.headers.get('content-type');
-        let result;
-
-        if (contentType && contentType.includes('application/json')) {
-            result = await response.json();
-        } else {
-            const text = await response.text();
-            throw new Error(text || 'Unknown server error');
-        }
-
         if (!response.ok) {
-            throw new Error(result.message || 'Delete operation failed');
+            const error = await response.json();
+            throw new Error(error.message || 'Delete operation failed');
         }
 
+        const result = await response.json();
         showAdminNotification(result.message || 'User deleted successfully', 'success');
         loadUsers(); // Refresh user list
     } catch (error) {
         console.error('Delete user error:', error);
-
-        let errorMessage = error.message;
-        if (error.message.includes('Invalid session user ID')) {
-            errorMessage = 'Your session is invalid. Please log in again.';
-            logout();
-        }
-
-        showAdminNotification(errorMessage, 'error');
+        showAdminNotification(error.message || 'Failed to delete user', 'error');
     }
 }
 

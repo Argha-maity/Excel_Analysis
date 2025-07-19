@@ -33,7 +33,8 @@ async function getUser(req, res) {
 async function deleteUser(req, res) {
     try {
         // 1. Verify authentication
-        if (!req.user || !req.user._id) {
+        const currentUserId = (req.user._id || req.user.id)?.toString();
+        if (!currentUserId) {
             return res.status(401).json({ message: 'Not authenticated' });
         }
 
@@ -47,16 +48,14 @@ async function deleteUser(req, res) {
             return res.status(400).json({ message: 'Invalid target user ID' });
         }
 
-        // 4. Convert IDs to strings for safe comparison
-        const currentUserId = req.user._id.toString();
         const targetUserId = req.params.id;
 
-        // 5. Prevent self-deletion
+        // 4. Prevent self-deletion
         if (currentUserId === targetUserId) {
             return res.status(400).json({ message: 'Cannot delete your own account' });
         }
 
-        // 6. Perform deletion
+        // 5. Perform deletion
         const deletedUser = await User.findByIdAndDelete(targetUserId);
         if (!deletedUser) {
             return res.status(404).json({ message: 'User not found' });
@@ -70,7 +69,7 @@ async function deleteUser(req, res) {
             error: process.env.NODE_ENV === 'development' ? error.message : undefined
         });
     }
-};
+}
 
 async function getSystemSettings(req, res) {
     try {
@@ -126,6 +125,24 @@ async function updateSystemSettings(req, res) {
         console.error('Error updating system settings:', error);
         res.status(500).json({ message: 'Server error' });
     }
+}
+
+const updateUser = async (req, res) => {
+    try {
+        const user = await User.findByIdAndUpdate(req.params.id, req.body, {
+            new: true,
+            runValidators: true,
+        }).select('-password');
+
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        res.json(user);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Server error' });
+    }
 };
 
 module.exports = {
@@ -134,4 +151,5 @@ module.exports = {
     deleteUser,
     getSystemSettings,
     updateSystemSettings,
+    updateUser,
 }
