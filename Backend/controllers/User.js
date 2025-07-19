@@ -4,7 +4,7 @@ const { JWT_SECRET } = require("../config");
 
 const generateToken = (user) => {
     return jwt.sign(
-        { id: user._id, email: user.email },
+        { id: user._id, email: user.email, role: user.role },  // ✅ include role
         JWT_SECRET,
         { expiresIn: "30d" }
     );
@@ -34,6 +34,7 @@ async function handleUserSignup(req, res) {
                 _id: user._id,
                 username: user.username,
                 email: user.email,
+                role: user.role, 
                 token: generateToken(user),
             });
         } else {
@@ -65,6 +66,7 @@ async function handleUserLogin(req, res) {
             _id: user._id,
             username: user.username,
             email: user.email,
+            role: user.role,
             token: generateToken(user),
         });
         
@@ -97,7 +99,7 @@ async function updateProfile(req, res) {
 
     if (!updatedUser) return res.status(404).json({ message: 'User not found' });
 
-    res.json({ message: 'Profile updated successfully', user: updatedUser });
+    res.json(updatedUser); 
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server error' });

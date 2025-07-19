@@ -582,6 +582,10 @@ body {
     border-bottom-color: #4e73df;
 }
 
+.settings-tab[data-role="admin"] {
+    display: none;
+}
+
 .settings-tab-content {
     display: none;
 }
@@ -655,4 +659,103 @@ body {
 
 .action-btn.delete:hover {
     color: #e74a3b;
+}
+
+.admin-notification {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    padding: 15px 20px;
+    border-radius: 5px;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-width: 250px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+    z-index: 1000;
+    animation: slideIn 0.3s ease-out;
+}
+
+.admin-notification.info {
+    background-color: #3498db;
+}
+
+.admin-notification.success {
+    background-color: #2ecc71;
+}
+
+.admin-notification.error {
+    background-color: #e74c3c;
+}
+
+.admin-notification.fade-out {
+    animation: fadeOut 0.3s ease-out;
+}
+
+.close-notification {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 20px;
+    cursor: pointer;
+    margin-left: 15px;
+}
+
+@keyframes slideIn {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes fadeOut {
+    from { opacity: 1; }
+    to { opacity: 0; }
+}
+
+/* Add to dashboard.css */
+.user-edit-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.user-edit-modal .modal-content {
+    background: white;
+    padding: 20px;
+    border-radius: 5px;
+    width: 100%;
+    max-width: 500px;
+    box-shadow: 0 0 20px rgba(0,0,0,0.2);
+}
+
+.user-edit-modal .form-group {
+    margin-bottom: 15px;
+}
+
+.user-edit-modal .form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 500;
+}
+
+.user-edit-modal .form-group input,
+.user-edit-modal .form-group select {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.user-edit-modal .form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 20px;
 }

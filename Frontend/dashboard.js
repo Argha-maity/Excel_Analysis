@@ -15,13 +15,15 @@ Chart.register(ChartDataLabels);
 
 document.addEventListener('DOMContentLoaded', () => {
     protectPage();
-    fetchCurrentUser();
-    loadDashboardStats();
-    loadRecentFiles();
-    setupEventListeners();
-    setupSidebarNavigation();
-    setupProfileForm();
-    setupAdminPanel();
+    fetchCurrentUser().then(() => {
+        setupAdminPanelVisibility();
+        loadDashboardStats();
+        loadRecentFiles();
+        setupEventListeners();
+        setupSidebarNavigation();
+        setupProfileForm();
+        setupAdminPanel();
+    });
 });
 
 let currentChart = null;
@@ -42,11 +44,29 @@ async function fetchCurrentUser() {
 
         const user = await response.json();
 
+        // Store user data globally
+        window.currentUser = user;
+
         document.querySelector(".user-profile span").textContent = user.username;
-        document.querySelector(".user-avatar").textContent = 
+        document.querySelector(".user-avatar").textContent =
             user.username.split(" ").map(word => word[0].toUpperCase()).join("");
+
+        // Update admin tab visibility based on role
+        const adminTab = document.querySelector('.settings-tab[data-tab="adminTab"]');
+        if (adminTab) {
+            adminTab.style.display = user.role === 'admin' ? 'block' : 'none';
+        }
     } catch {
         logout();
+    }
+}
+
+function setupAdminPanelVisibility() {
+    const adminTab = document.querySelector('.settings-tab[data-role="admin"]');
+    if (window.currentUser && window.currentUser.role === 'admin') {
+        adminTab.style.display = 'block';
+    } else {
+        adminTab.style.display = 'none';
     }
 }
 
@@ -138,16 +158,15 @@ async function handleFileUpload(event) {
 
         const response = await fetch('http://localhost:8003/api/upload', {
             method: 'POST',
-            headers: { 
-                'Authorization': `Bearer ${getToken()}` 
+            headers: {
+                'Authorization': `Bearer ${getToken()}`
             },
             body: formData
         });
 
         if (!response.ok) {
-            await response.text(); // just consume it
-            showUploadStatus('Server error occurred.', 'error');
-            return;
+            const error = await response.json();
+            throw new Error(error.message || 'Server error occurred');
         }
 
         const result = await response.json();
@@ -337,7 +356,7 @@ function renderDataTable(sheetData) {
         const tr = document.createElement('tr');
         row.forEach((cell, index) => {
             const td = document.createElement('td');
-            td.textContent = (sheetData.columnTypes?.[sheetData.headers[index]] === 'date') 
+            td.textContent = (sheetData.columnTypes?.[sheetData.headers[index]] === 'date')
                 ? new Date(cell).toLocaleDateString() : cell;
             tr.appendChild(td);
         });
@@ -353,11 +372,12 @@ async function loadRecentFiles() {
             headers: { 'Authorization': `Bearer ${getToken()}` }
         });
 
-        if (!response.ok) throw new Error();
+        if (!response.ok) throw new Error('Failed to load recent files');
 
         const files = await response.json();
         const recentFilesContainer = document.querySelector('.recent-files');
 
+        // Clear existing files (keep the header)
         while (recentFilesContainer.children.length > 1) {
             recentFilesContainer.removeChild(recentFilesContainer.lastChild);
         }
@@ -365,7 +385,10 @@ async function loadRecentFiles() {
         files.forEach(file => {
             addToRecentFiles(file.filename, file._id, file.createdAt);
         });
-    } catch {}
+    } catch (error) {
+        console.error('Error loading recent files:', error);
+        showUploadStatus('Error loading recent files', 'error');
+    }
 }
 
 function addToRecentFiles(filename, fileId, createdAt) {
@@ -418,7 +441,7 @@ async function loadFile(fileId) {
             headers: { 'Authorization': `Bearer ${getToken()}` }
         });
 
-        if (!response.ok) throw new Error();
+        if (!response.ok) throw new Error('Failed to load file');
 
         const result = await response.json();
         currentFileData = result.data;
@@ -433,13 +456,11 @@ async function loadFile(fileId) {
 
 async function downloadFile(fileId) {
     try {
-        const token = getToken();
         const response = await fetch(`http://localhost:8003/api/files/${fileId}/download`, {
-            method: "GET",
-            headers: { 'Authorization': `Bearer ${token}` }
+            headers: { 'Authorization': `Bearer ${getToken()}` }
         });
 
-        if (!response.ok) throw new Error();
+        if (!response.ok) throw new Error('Failed to download file');
 
         const blob = await response.blob();
         const url = URL.createObjectURL(blob);
@@ -454,15 +475,17 @@ async function downloadFile(fileId) {
 }
 
 async function deleteFile(fileId, element) {
+    if (!confirm('Are you sure you want to delete this file?')) return;
+
     try {
         const response = await fetch(`http://localhost:8003/api/files/${fileId}`, {
             method: 'DELETE',
-            headers: { 
-                'Authorization': `Bearer ${getToken()}` 
+            headers: {
+                'Authorization': `Bearer ${getToken()}`
             }
         });
 
-        if (!response.ok) throw new Error();
+        if (!response.ok) throw new Error('Failed to delete file');
 
         if (element) element.remove();
 
@@ -485,7 +508,10 @@ async function deleteFile(fileId, element) {
 }
 
 function exportChartFunction() {
-    if (!currentChart) return;
+    if (!currentChart) {
+        showUploadStatus('No chart to export', 'error');
+        return;
+    }
     const link = document.createElement('a');
     link.download = `chart_${new Date().toISOString().slice(0, 10)}.png`;
     link.href = document.getElementById('mainChart').toDataURL('image/png');
@@ -493,7 +519,11 @@ function exportChartFunction() {
 }
 
 function exportDataFunction() {
-    if (!currentFileData) return;
+    if (!currentFileData) {
+        showUploadStatus('No data to export', 'error');
+        return;
+    }
+
     const sheetName = document.getElementById('sheetSelect').value;
     const sheetData = currentFileData[sheetName];
 
@@ -516,6 +546,8 @@ function updateChartType() {
 
 function showUploadStatus(message, type = 'info') {
     const fileInfo = document.getElementById('file-info');
+    if (!fileInfo) return;
+
     fileInfo.innerHTML = `
         <div class="upload-status ${type}">
             ${type === 'info' ? '<i class="fas fa-spinner fa-spin"></i>' : ''}
@@ -532,13 +564,11 @@ function getToken() {
 
 async function loadDashboardStats() {
     try {
-        const token = getToken();
         const response = await fetch('http://localhost:8003/api/files/dashboard/stats', {
-            method: 'GET',
-            headers: { 'Authorization': `Bearer ${token}` }
+            headers: { 'Authorization': `Bearer ${getToken()}` }
         });
 
-        if (!response.ok) throw new Error();
+        if (!response.ok) throw new Error('Failed to load dashboard stats');
 
         const stats = await response.json();
 
@@ -548,8 +578,8 @@ async function loadDashboardStats() {
         document.getElementById('chartsCreatedChange').textContent = stats.chartsCreatedChange;
         document.getElementById('chartImports').textContent = stats.chartImports;
         document.getElementById('chartImportsChange').textContent = stats.chartImportsChange;
-    } catch {
-        console.error("Error loading dashboard stats:", err);
+    } catch (error) {
+        console.error("Error loading dashboard stats:", error);
     }
 }
 
@@ -566,6 +596,11 @@ function setupSidebarNavigation() {
 
             const targetId = link.getAttribute('data-section');
             toggleSection(targetId);
+
+            // Activate profile tab by default when settings is opened
+            if (targetId === 'settingsSection') {
+                activateTab('profileTab');
+            }
         });
     });
 }
@@ -585,7 +620,9 @@ function toggleSection(showId) {
     }
 
     // Update page title
-    pageTitle.textContent = showId === 'dashboardSection' ? 'Dashboard' : 'Settings';
+    if (pageTitle) {
+        pageTitle.textContent = showId === 'dashboardSection' ? 'Dashboard' : 'Settings';
+    }
 }
 
 function activateTab(tabId) {
@@ -598,8 +635,17 @@ function activateTab(tabId) {
     });
 
     // Activate the selected tab
-    document.querySelector(`.settings-tab[data-tab="${tabId}"]`).classList.add('active');
-    document.getElementById(tabId).classList.add('active');
+    const tabButton = document.querySelector(`.settings-tab[data-tab="${tabId}"]`);
+    const tabContent = document.getElementById(tabId);
+
+    if (tabButton) tabButton.classList.add('active');
+    if (tabContent) tabContent.classList.add('active');
+
+    // Special handling for admin tab
+    if (tabId === 'adminTab') {
+        loadUsers();
+        loadSystemSettings();
+    }
 }
 
 function setupProfileForm() {
@@ -608,7 +654,7 @@ function setupProfileForm() {
     const emailInput = document.getElementById("emailInput");
     const statusDiv = document.getElementById("profileUpdateStatus");
 
-    if (!profileForm || !usernameInput || !emailInput) {
+    if (!profileForm || !usernameInput || !emailInput || !statusDiv) {
         console.error("Profile form elements not found!");
         return;
     }
@@ -619,11 +665,19 @@ function setupProfileForm() {
             "Authorization": `Bearer ${getToken()}`
         }
     })
-    .then(res => res.json())
-    .then(user => {
-        usernameInput.value = user.username || "";
-        emailInput.value = user.email || "";
-    });
+        .then(res => {
+            if (!res.ok) throw new Error('Failed to fetch user data');
+            return res.json();
+        })
+        .then(user => {
+            usernameInput.value = user.username || "";
+            emailInput.value = user.email || "";
+        })
+        .catch(error => {
+            console.error("Error fetching user data:", error);
+            statusDiv.textContent = "Error loading profile data";
+            statusDiv.style.color = "red";
+        });
 
     profileForm.addEventListener("submit", async (e) => {
         e.preventDefault();
@@ -643,7 +697,10 @@ function setupProfileForm() {
                 body: JSON.stringify(updatedData)
             });
 
-            if (!res.ok) throw new Error("Update failed");
+            if (!res.ok) {
+                const error = await res.json();
+                throw new Error(error.message || "Update failed");
+            }
 
             statusDiv.textContent = "Profile updated successfully!";
             statusDiv.style.color = "green";
@@ -652,21 +709,37 @@ function setupProfileForm() {
             document.getElementById("user-name").textContent = updatedData.username;
             document.querySelector(".user-avatar").textContent = updatedData.username
                 .split(" ").map(w => w[0].toUpperCase()).join("");
+
+            // Update current user data
+            if (window.currentUser) {
+                window.currentUser.username = updatedData.username;
+                window.currentUser.email = updatedData.email;
+            }
         } catch (err) {
-            statusDiv.textContent = "Error updating profile.";
+            statusDiv.textContent = err.message || "Error updating profile";
             statusDiv.style.color = "red";
         }
     });
 }
 
 function setupAdminPanel() {
+    // Check if admin elements exist
+    const adminTab = document.querySelector('.settings-tab[data-tab="adminTab"]');
+    if (!adminTab) return;
+
+    // Hide admin tab if user is not admin
+    if (!window.currentUser || window.currentUser.role !== 'admin') {
+        adminTab.style.display = 'none';
+        return;
+    }
+
     // Tab switching
     const tabs = document.querySelectorAll('.settings-tab');
     tabs.forEach(tab => {
         tab.addEventListener('click', () => {
             tabs.forEach(t => t.classList.remove('active'));
             tab.classList.add('active');
-            
+
             const tabId = tab.getAttribute('data-tab');
             document.querySelectorAll('.settings-tab-content').forEach(content => {
                 content.classList.remove('active');
@@ -676,21 +749,30 @@ function setupAdminPanel() {
     });
 
     // Load users when admin tab is clicked
-    document.querySelector('.settings-tab[data-tab="adminTab"]').addEventListener('click', loadUsers);
+    adminTab.addEventListener('click', loadUsers);
 
     // User search functionality
-    document.getElementById('userSearch').addEventListener('input', (e) => {
-        filterUsers(e.target.value);
-    });
+    const userSearch = document.getElementById('userSearch');
+    if (userSearch) {
+        userSearch.addEventListener('input', (e) => {
+            filterUsers(e.target.value);
+        });
+    }
 
     // Refresh users button
-    document.getElementById('refreshUsers').addEventListener('click', loadUsers);
+    const refreshBtn = document.getElementById('refreshUsers');
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', loadUsers);
+    }
 
     // System settings form
-    document.getElementById('systemSettingsForm').addEventListener('submit', (e) => {
-        e.preventDefault();
-        saveSystemSettings();
-    });
+    const systemForm = document.getElementById('systemSettingsForm');
+    if (systemForm) {
+        systemForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            saveSystemSettings();
+        });
+    }
 
     // Load current system settings
     loadSystemSettings();
@@ -702,18 +784,23 @@ async function loadUsers() {
             headers: { 'Authorization': `Bearer ${getToken()}` }
         });
 
-        if (!response.ok) throw new Error('Failed to load users');
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.message || 'Failed to load users');
+        }
 
         const users = await response.json();
         renderUsersTable(users);
     } catch (error) {
         console.error('Error loading users:', error);
-        showAdminNotification('Failed to load users', 'error');
+        showAdminNotification(error.message || 'Failed to load users', 'error');
     }
 }
 
 function renderUsersTable(users) {
     const tbody = document.querySelector('#usersTable tbody');
+    if (!tbody) return;
+
     tbody.innerHTML = '';
 
     users.forEach(user => {
@@ -756,7 +843,7 @@ function filterUsers(searchTerm) {
         const username = row.cells[0].textContent.toLowerCase();
         const email = row.cells[1].textContent.toLowerCase();
         const search = searchTerm.toLowerCase();
-        
+
         if (username.includes(search) || email.includes(search)) {
             row.style.display = '';
         } else {
@@ -766,55 +853,203 @@ function filterUsers(searchTerm) {
 }
 
 async function editUser(userId) {
-    // Implement edit user functionality
-    // Could show a modal with the user's details for editing
-    console.log('Edit user:', userId);
+    try {
+        console.log(`Fetching user data for ID: ${userId}`); // Debug
+
+        const response = await fetch(`http://localhost:8003/api/admin/users/${userId}`, {
+            headers: {
+                'Authorization': `Bearer ${getToken()}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        console.log('Response status:', response.status); // Debug
+
+        if (!response.ok) {
+            const text = await response.text(); // don't try response.json() if status is error
+            throw new Error(`Server error: ${text}`);
+        }
+
+        const user = await response.json();
+        console.log('User data:', user); // Debug
+
+        // Create and show edit modal
+        showEditUserModal(user);
+    } catch (err) {
+        console.error('Error editing user:', err);
+        showAdminNotification(err.message || 'Failed to edit user', 'error');
+    }
+}
+
+function showEditUserModal(user) {
+    // Remove any existing modals
+    const existingModal = document.querySelector('.user-edit-modal');
+    if (existingModal) existingModal.remove();
+
+    const modalHTML = `
+        <div class="user-edit-modal">
+            <div class="modal-content">
+                <h3>Edit User</h3>
+                <form id="editUserForm">
+                    <div class="form-group">
+                        <label>Username</label>
+                        <input type="text" id="editUsername" value="${user.username}" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" id="editEmail" value="${user.email}" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Role</label>
+                        <select id="editRole">
+                            <option value="user" ${user.role === 'user' ? 'selected' : ''}>User</option>
+                            <option value="admin" ${user.role === 'admin' ? 'selected' : ''}>Admin</option>
+                        </select>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn-primary">Save</button>
+                        <button type="button" class="btn-outline cancel-edit">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    `;
+
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+    // Handle form submission
+    document.getElementById('editUserForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        await updateUser(user._id);
+    });
+
+    // Handle cancel
+    document.querySelector('.cancel-edit').addEventListener('click', () => {
+        document.querySelector('.user-edit-modal').remove();
+    });
+}
+
+async function updateUser(userId) {
+    try {
+        const updatedData = {
+            username: document.getElementById('editUsername').value.trim(),
+            email: document.getElementById('editEmail').value.trim(),
+            role: document.getElementById('editRole').value
+        };
+
+        const response = await fetch(`http://localhost:8003/api/admin/users/${userId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${getToken()}`
+            },
+            body: JSON.stringify(updatedData)
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.message || 'Failed to update user');
+        }
+
+        // Remove modal and refresh user list
+        document.querySelector('.user-edit-modal').remove();
+        showAdminNotification('User updated successfully', 'success');
+        loadUsers();
+    } catch (error) {
+        console.error('Error updating user:', error);
+        showAdminNotification(error.message || 'Failed to update user', 'error');
+    }
 }
 
 async function deleteUser(userId) {
     if (!confirm('Are you sure you want to delete this user?')) return;
-    
+
     try {
+        // 1. Get current token
+        const token = getToken();
+        if (!token) {
+            showAdminNotification('Not authenticated', 'error');
+            return logout();
+        }
+
+        // 2. Make delete request
         const response = await fetch(`http://localhost:8003/api/admin/users/${userId}`, {
             method: 'DELETE',
-            headers: { 'Authorization': `Bearer ${getToken()}` }
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
         });
 
-        if (!response.ok) throw new Error('Failed to delete user');
+        // 3. Handle response
+        const contentType = response.headers.get('content-type');
+        let result;
 
-        showAdminNotification('User deleted successfully', 'success');
-        loadUsers(); // Refresh the user list
+        if (contentType && contentType.includes('application/json')) {
+            result = await response.json();
+        } else {
+            const text = await response.text();
+            throw new Error(text || 'Unknown server error');
+        }
+
+        if (!response.ok) {
+            throw new Error(result.message || 'Delete operation failed');
+        }
+
+        showAdminNotification(result.message || 'User deleted successfully', 'success');
+        loadUsers(); // Refresh user list
     } catch (error) {
-        console.error('Error deleting user:', error);
-        showAdminNotification('Failed to delete user', 'error');
+        console.error('Delete user error:', error);
+
+        let errorMessage = error.message;
+        if (error.message.includes('Invalid session user ID')) {
+            errorMessage = 'Your session is invalid. Please log in again.';
+            logout();
+        }
+
+        showAdminNotification(errorMessage, 'error');
     }
 }
 
 async function loadSystemSettings() {
     try {
-        const response = await fetch('http://localhost:8003/api/admin/settings', {
-            headers: { 'Authorization': `Bearer ${getToken()}` }
+        const response = await fetch("http://localhost:8003/api/admin/settings", {
+            headers: {
+                "Authorization": `Bearer ${getToken()}`,
+                "Content-Type": "application/json"
+            }
         });
 
-        if (!response.ok) throw new Error('Failed to load settings');
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.message || "Failed to load settings");
+        }
 
         const settings = await response.json();
-        document.getElementById('maxFileSize').value = settings.maxFileSize || '';
-        document.getElementById('allowedFileTypes').value = settings.allowedFileTypes || '';
+
+        document.getElementById("maxFileSize").value = settings.maxFileSize || "";
+        document.getElementById("allowedFileTypes").value =
+            Array.isArray(settings.allowedFileTypes)
+                ? settings.allowedFileTypes.join(", ")
+                : settings.allowedFileTypes || "";
     } catch (error) {
-        console.error('Error loading system settings:', error);
+        console.error("Error loading system settings:", error);
+        showAdminNotification(error.message || "Failed to load settings", "error");
     }
 }
 
 async function saveSystemSettings() {
-    const settings = {
-        maxFileSize: document.getElementById('maxFileSize').value,
-        allowedFileTypes: document.getElementById('allowedFileTypes').value
-    };
-
     try {
+        const settings = {
+            maxFileSize: parseInt(document.getElementById('maxFileSize').value) || 10,
+            allowedFileTypes: document.getElementById('allowedFileTypes').value
+                .split(',')
+                .map(item => item.trim())
+                .filter(item => item)
+        };
+
         const response = await fetch('http://localhost:8003/api/admin/settings', {
-            method: 'POST',
+            method: 'PATCH',
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${getToken()}`
@@ -822,16 +1057,39 @@ async function saveSystemSettings() {
             body: JSON.stringify(settings)
         });
 
-        if (!response.ok) throw new Error('Failed to save settings');
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.message || 'Failed to save settings');
+        }
 
         showAdminNotification('Settings saved successfully', 'success');
     } catch (error) {
         console.error('Error saving system settings:', error);
-        showAdminNotification('Failed to save settings', 'error');
+        showAdminNotification(error.message || 'Failed to save settings', 'error');
     }
 }
 
 function showAdminNotification(message, type = 'info') {
-    // Implement notification display (could use a toast or alert)
-    alert(`${type.toUpperCase()}: ${message}`);
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = `admin-notification ${type}`;
+    notification.innerHTML = `
+        <span>${message}</span>
+        <button class="close-notification">&times;</button>
+    `;
+
+    // Add to DOM
+    const container = document.querySelector('.admin-panel') || document.body;
+    container.appendChild(notification);
+
+    // Auto-remove after 5 seconds
+    setTimeout(() => {
+        notification.classList.add('fade-out');
+        setTimeout(() => notification.remove(), 300);
+    }, 5000);
+
+    // Manual close
+    notification.querySelector('.close-notification').addEventListener('click', () => {
+        notification.remove();
+    });
 }

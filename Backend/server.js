@@ -19,7 +19,10 @@ const userRoutes = require("./routes/User");
 app.use("/api/users", userRoutes);  
 
 const fileRoutes = require("./routes/File");
-app.use("/api",fileRoutes);
+app.use("/api", fileRoutes);
+
+const adminRoutes = require("./routes/admin");
+app.use("/api/admin", adminRoutes);
 
 app.get("/", (req, res) => {
     res.json({ message: "Hello from server." });
